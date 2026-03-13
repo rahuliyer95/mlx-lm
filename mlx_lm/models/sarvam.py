@@ -319,14 +319,12 @@ class Model(nn.Module):
         self,
     ) -> Callable[[str, nn.Module], Union[bool, Dict[str, Any]]]:
         def _predicate(path: str, _: nn.Module) -> bool | Dict[str, Any]:
-            if "word_embeddings" in path:
-                return False
             # LM head is the final projection to logits. 4-bit error here directly flips token
             # choices (e.g. '_' vs space).
-            if "lm_head" in path:
+            if path.endswith("lm_head"):
                 return False
             # Shared experts are in the critical path for every token. Use 8-bit.
-            if "shared_experts" in path:
+            if path.endswith("mlp.gate"):
                 return {"group_size": 64, "bits": 8, "mode": "affine"}
             return True
 
